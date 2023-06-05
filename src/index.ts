@@ -1,6 +1,5 @@
 type Vec = { x: number; y: number };
 type Ant = Vec & {
-  radius: number;
   direction: number;
   home: number;
   food: number;
@@ -11,6 +10,7 @@ type Food = Vec & { radius: number };
 
 const scale = 6;
 const speed = 1;
+const screamRadius = 16;
 const ants: Ant[] = [];
 const foods: Food[] = [];
 const home = { x: 0, y: 0, radius: 4 };
@@ -29,7 +29,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   ants.push(
     ...new Array(512).fill(0).map(() => ({
-      ...{ x: Math.random() * width, y: Math.random() * height, radius: 16 },
+      ...{ x: Math.random() * width, y: Math.random() * height },
       ...{ home: 0, food: 0, wandering: true, carrying: false },
       direction: Math.random() * Math.PI * 2,
     }))
@@ -76,8 +76,10 @@ const Render = (ctx: CanvasRenderingContext2D) => {
   ctx.fill();
 
   const updates = Update();
-  updates.forEach(([x1, y1, x2, y2, food]) => {
-    ctx.strokeStyle = `rgba(0, ${food ? 0 : 255}, ${food ? 255 : 0}, 0.05)`;
+  updates.forEach(([x1, y1, x2, y2, food, home]) => {
+    ctx.strokeStyle = `rgba(${food && home ? 128 : 0}, ${
+      food && !home ? 0 : 128
+    }, ${food && !home ? 128 : 0}, 0.05)`;
     ctx.beginPath();
     ctx.moveTo(x1 + 0.5, y1 + 0.5);
     ctx.lineTo(x2 + 0.5, y2 + 0.5);
@@ -93,14 +95,14 @@ const Render = (ctx: CanvasRenderingContext2D) => {
   setTimeout(() => Render(ctx), 10);
 };
 
-const near = (ant: Ant, thing: Vec & { radius: number }) =>
-  ant.x > thing.x - thing.radius &&
-  ant.x < thing.x + thing.radius &&
-  ant.y > thing.y - thing.radius &&
-  ant.y < thing.y + thing.radius;
+const near = (a: Vec, b: Vec, radius: number) =>
+  a.x > b.x - radius &&
+  a.x < b.x + radius &&
+  a.y > b.y - radius &&
+  a.y < b.y + radius;
 
 const Update = () => {
-  const updates: [number, number, number, number, boolean][] = [];
+  const updates: [number, number, number, number, boolean, boolean][] = [];
 
   ants.forEach(ant => {
     ant.x += Math.cos(ant.direction) * speed;
@@ -123,7 +125,7 @@ const Update = () => {
       ant.wandering = true;
     }
 
-    if (near(ant, home) && ant.carrying) {
+    if (near(ant, home, home.radius) && ant.carrying) {
       ant.carrying = false;
       ant.home = 0;
       ant.direction += Math.PI;
@@ -132,7 +134,7 @@ const Update = () => {
 
     if (!ant.carrying) {
       foods.forEach(food => {
-        if (near(ant, food)) {
+        if (near(ant, food, food.radius)) {
           ant.carrying = true;
           ant.food = 0;
           ant.direction += Math.PI;
@@ -156,27 +158,28 @@ const Update = () => {
   ants.forEach(ant => {
     ants.forEach(other => {
       if (ant === other) return;
-      if (near(ant, other)) {
-        const f = ant.food + ant.radius;
-        const h = ant.home + ant.radius;
-        const updateFood = !other.carrying && f < other.food;
-        const updateHome = other.carrying && h < other.home;
-        const newDir =
-          Math.atan2(ant.y - other.y, ant.x - other.x) +
-          Math.random() * 0.1 -
-          0.05;
-        if (updateFood) {
-          other.food = f;
-          other.direction = newDir;
-          updates.push;
-        } else if (updateHome) {
-          other.home = h;
-          other.direction = newDir;
-        }
-        if (updateFood || updateHome) {
-          other.wandering = false;
-          updates.push([ant.x, ant.y, other.x, other.y, updateFood]);
-        }
+      if (!near(ant, other, screamRadius)) return;
+      const f = ant.food + screamRadius;
+      const h = ant.home + screamRadius;
+      const closerFood = f < other.food;
+      const closerHome = h < other.home;
+      const goFood = !other.carrying && closerFood;
+      const goHome = other.carrying && closerHome;
+      const newDir =
+        Math.atan2(ant.y - other.y, ant.x - other.x) +
+        Math.random() * 0.5 -
+        0.25;
+      if (closerFood) {
+        other.food = f;
+      } else if (closerHome) {
+        other.home = h;
+      }
+      if (closerFood || closerHome) {
+        updates.push([ant.x, ant.y, other.x, other.y, closerFood, closerHome]);
+      }
+      if (goFood || goHome) {
+        other.direction = newDir;
+        other.wandering = false;
       }
     });
   });
