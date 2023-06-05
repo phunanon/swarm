@@ -1,6 +1,5 @@
-type Ant = {
-  x: number;
-  y: number;
+type Vec = { x: number; y: number };
+type Ant = Vec & {
   radius: number;
   direction: number;
   home: number;
@@ -8,9 +7,10 @@ type Ant = {
   wandering: boolean;
   carrying: boolean;
 };
-type Food = { x: number; y: number; radius: number };
+type Food = Vec & { radius: number };
 
 const scale = 6;
+const speed = 1;
 const ants: Ant[] = [];
 const foods: Food[] = [];
 const home = { x: 0, y: 0, radius: 4 };
@@ -77,10 +77,10 @@ const Render = (ctx: CanvasRenderingContext2D) => {
 
   const updates = Update();
   updates.forEach(([x1, y1, x2, y2, food]) => {
-    ctx.strokeStyle = `rgba(0, ${food ? 0 : 255}, ${food ? 255 : 0}, 0.1)`;
+    ctx.strokeStyle = `rgba(0, ${food ? 0 : 255}, ${food ? 255 : 0}, 0.05)`;
     ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
+    ctx.moveTo(x1 + 0.5, y1 + 0.5);
+    ctx.lineTo(x2 + 0.5, y2 + 0.5);
     ctx.stroke();
   });
 
@@ -93,18 +93,18 @@ const Render = (ctx: CanvasRenderingContext2D) => {
   setTimeout(() => Render(ctx), 10);
 };
 
+const near = (ant: Ant, thing: Vec & { radius: number }) =>
+  ant.x > thing.x - thing.radius &&
+  ant.x < thing.x + thing.radius &&
+  ant.y > thing.y - thing.radius &&
+  ant.y < thing.y + thing.radius;
+
 const Update = () => {
   const updates: [number, number, number, number, boolean][] = [];
 
-  const near = (ant: Ant, thing: { x: number; y: number; radius: number }) =>
-    ant.x > thing.x - thing.radius &&
-    ant.x < thing.x + thing.radius &&
-    ant.y > thing.y - thing.radius &&
-    ant.y < thing.y + thing.radius;
-
   ants.forEach(ant => {
-    ant.x += Math.cos(ant.direction);
-    ant.y += Math.sin(ant.direction);
+    ant.x += Math.cos(ant.direction) * speed;
+    ant.y += Math.sin(ant.direction) * speed;
 
     if (ant.x < 0) {
       ant.direction = Math.PI - ant.direction;
