@@ -182,29 +182,46 @@ const Update = () => {
     ++ant.home;
   });
 
-  ants.forEach(ant => {
-    ants.forEach(other => {
-      if (ant === other) return;
-      if (!near(ant, other, screamRadius)) return;
-      const f = ant.food + screamRadius;
-      const h = ant.home + screamRadius;
-      const updateFood = !other.carrying && f < other.food;
-      const updateHome = other.carrying && h < other.home;
-      const newDir =
-        Math.atan2(ant.y - other.y, ant.x - other.x) +
-        Math.random() * 0.5 -
-        0.25;
-      if (updateFood) {
-        other.food = f;
-      } else if (updateHome) {
-        other.home = h;
+  for (let i = 0; i < ants.length; ++i) {
+    const ant = ants[i]!;
+    for (let j = i + 1; j < ants.length; ++j) {
+      const other = ants[j]!;
+      if (!near(ant, other, screamRadius)) continue;
+      const f0 = ant.food + screamRadius;
+      const h0 = ant.home + screamRadius;
+      const f1 = other.food + screamRadius;
+      const h1 = other.home + screamRadius;
+      const updateFood0 = !other.carrying && f0 < other.food;
+      const updateHome0 = other.carrying && h0 < other.home;
+      const updateFood1 = !ant.carrying && f1 < ant.food;
+      const updateHome1 = ant.carrying && h1 < ant.home;
+      if (updateFood0) {
+        other.food = f0;
+      } else if (updateHome0) {
+        other.home = h0;
       }
-      if (updateFood || updateHome) {
+      if (updateFood1) {
+        ant.food = f1;
+      } else if (updateHome1) {
+        ant.home = h1;
+      }
+      if (updateFood0 || updateHome0) {
+        const newDir =
+          Math.atan2(ant.y - other.y, ant.x - other.x) +
+          Math.random() * 0.5 -
+          0.25;
         other.direction = newDir;
-        updates.push([ant.x, ant.y, other.x, other.y, updateFood]);
+        updates.push([ant.x, ant.y, other.x, other.y, updateFood0]);
+      } else if (updateFood1 || updateHome1) {
+        const newDir =
+          Math.atan2(other.y - ant.y, other.x - ant.x) +
+          Math.random() * 0.5 -
+          0.25;
+        ant.direction = newDir;
+        updates.push([ant.x, ant.y, other.x, other.y, updateFood1]);
       }
-    });
-  });
+    }
+  }
 
   return updates;
 };
