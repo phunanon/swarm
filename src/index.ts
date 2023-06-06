@@ -6,7 +6,7 @@ type Ant = Vec & {
   wandering: boolean;
   carrying: boolean;
 };
-type Food = Vec & { radius: number };
+type Food = Vec & { direction: number; radius: number };
 
 const scale = 6;
 const speed = 1;
@@ -15,6 +15,8 @@ const ants: Ant[] = [];
 const foods: Food[] = [];
 const home = { x: 0, y: 0, radius: 4 };
 let collected = 0;
+const w = () => document.body.offsetWidth / scale;
+const h = () => document.body.offsetHeight / scale;
 
 window.addEventListener('DOMContentLoaded', () => {
   const ctx = document.querySelector('canvas')?.getContext('2d');
@@ -24,26 +26,24 @@ window.addEventListener('DOMContentLoaded', () => {
     home.y = e.offsetY / scale;
   });
 
-  const width = document.body.offsetWidth / scale;
-  const height = document.body.offsetHeight / scale;
-
   ants.push(
     ...new Array(512).fill(0).map(() => ({
-      ...{ x: Math.random() * width, y: Math.random() * height },
+      ...{ x: Math.random() * w(), y: Math.random() * h() },
       ...{ home: 0, food: 0, wandering: true, carrying: false },
       direction: Math.random() * Math.PI * 2,
     }))
   );
   foods.push(
     ...new Array(3).fill(0).map(() => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
+      x: Math.random() * w(),
+      y: Math.random() * h(),
       radius: 4,
+      direction: Math.random() * Math.PI * 2,
     }))
   );
 
   home.x = 32;
-  home.y = height / 2;
+  home.y = h() / 2;
 
   Render(ctx);
 });
@@ -104,24 +104,49 @@ const near = (a: Vec, b: Vec, radius: number) =>
 const Update = () => {
   const updates: [number, number, number, number, boolean, boolean][] = [];
 
+  foods.forEach(food => {
+    food.x += Math.cos(food.direction) * speed * 0.2;
+    food.y += Math.sin(food.direction) * speed * 0.2;
+
+    if (food.x < food.radius) {
+      food.direction = Math.PI - food.direction;
+      food.x = food.radius;
+    }
+    if (food.x + food.radius > w()) {
+      food.direction = Math.PI - food.direction;
+      food.x = w() - food.radius;
+    }
+    if (food.y < food.radius) {
+      food.direction = -food.direction;
+      food.y = food.radius;
+    }
+    if (food.y + food.radius > h()) {
+      food.direction = -food.direction;
+    }
+  });
+
   ants.forEach(ant => {
     ant.x += Math.cos(ant.direction) * speed;
     ant.y += Math.sin(ant.direction) * speed;
 
     if (ant.x < 0) {
       ant.direction = Math.PI - ant.direction;
+      ant.x = 0;
       ant.wandering = true;
     }
-    if (ant.x > document.body.offsetWidth / scale) {
+    if (ant.x > w()) {
       ant.direction = Math.PI - ant.direction;
+      ant.x = w();
       ant.wandering = true;
     }
     if (ant.y < 0) {
       ant.direction = -ant.direction;
+      ant.y = 0;
       ant.wandering = true;
     }
-    if (ant.y > document.body.offsetHeight / scale) {
+    if (ant.y > h()) {
       ant.direction = -ant.direction;
+      ant.y = h();
       ant.wandering = true;
     }
 
@@ -140,9 +165,10 @@ const Update = () => {
           ant.direction += Math.PI;
           food.radius -= 0.001;
           if (food.radius < 1) {
-            food.x = (Math.random() * document.body.offsetWidth) / scale;
-            food.y = (Math.random() * document.body.offsetHeight) / scale;
+            food.x = Math.random() * w();
+            food.y = Math.random() * h();
             food.radius = 4;
+            food.direction = Math.random() * Math.PI * 2;
           }
         }
       });
