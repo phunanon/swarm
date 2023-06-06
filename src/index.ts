@@ -56,42 +56,44 @@ const Render = (ctx: CanvasRenderingContext2D) => {
   const height = document.body.offsetHeight;
   ctx.canvas.style.width = `${(ctx.canvas.width = width)}`;
   ctx.canvas.style.height = `${(ctx.canvas.height = height)}`;
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+  ctx.fillStyle = 'rgba(128, 128, 128, 1)';
   ctx.fillRect(0, 0, width, height);
 
   ctx.save();
   ctx.scale(scale, scale);
 
-  ants.forEach(ant => {
-    ctx.fillStyle = ant.carrying ? 'red' : 'black';
-    ctx.fillRect(ant.x, ant.y, 1, 1);
-  });
-  ctx.fillStyle = 'blue';
-  foods.forEach(food => {
-    ctx.beginPath();
-    ctx.arc(food.x, food.y, food.radius, 0, 2 * Math.PI);
-    ctx.fill();
-  });
-
-  ctx.fillStyle = 'green';
-  ctx.beginPath();
-  ctx.arc(home.x, home.y, home.radius, 0, 2 * Math.PI);
-  ctx.fill();
-
   const updates = Update();
-  updates.forEach(([x1, y1, x2, y2, food, home]) => {
-    ctx.strokeStyle = `rgba(${food && home ? 128 : 0}, ${
-      food && !home ? 0 : 128
-    }, ${food && !home ? 128 : 0}, 0.05)`;
+  updates.forEach(([x1, y1, x2, y2, food]) => {
+    ctx.strokeStyle = `rgba(0, ${food ? 0 : 255}, ${food ? 255 : 0}, 0.1)`;
     ctx.beginPath();
     ctx.moveTo(x1 + 0.5, y1 + 0.5);
     ctx.lineTo(x2 + 0.5, y2 + 0.5);
     ctx.stroke();
   });
 
+  ants.forEach(ant => {
+    ctx.fillStyle = ant.carrying ? 'white' : 'black';
+    ctx.fillRect(ant.x, ant.y, 1, 1);
+  });
+  foods.forEach(food => {
+    ctx.fillStyle = 'blue';
+    ctx.beginPath();
+    ctx.arc(food.x, food.y, food.radius, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    ctx.arc(food.x, food.y, food.radius * 0.9, 0, 2 * Math.PI);
+    ctx.fill();
+  });
+
+  ctx.fillStyle = 'rgb(0, 255, 0)';
+  ctx.beginPath();
+  ctx.arc(home.x, home.y, home.radius, 0, 2 * Math.PI);
+  ctx.fill();
+
   ctx.fillStyle = 'black';
-  ctx.font = '8px monospace';
-  ctx.fillText(`Collected ${collected}`, 2, 8);
+  ctx.font = '6px monospace';
+  ctx.fillText(`${collected}`, 2, 6);
 
   ctx.restore();
 
@@ -105,9 +107,9 @@ const near = (a: Vec, b: Vec, radius: number) =>
   a.y < b.y + radius;
 
 /** Moves an object and bounces it off the canvas bounds */
-const move = (vec: Vec3, radius = 0, speedMult = 1) => {
-  vec.x += Math.cos(vec.direction) * speed * speedMult;
-  vec.y += Math.sin(vec.direction) * speed * speedMult;
+const move = (vec: Vec3, radius = 0, pace = 1) => {
+  vec.x += Math.cos(vec.direction) * speed * pace;
+  vec.y += Math.sin(vec.direction) * speed * pace;
 
   if (vec.x < radius) {
     vec.x = radius;
@@ -128,7 +130,7 @@ const move = (vec: Vec3, radius = 0, speedMult = 1) => {
 };
 
 const Update = () => {
-  const updates: [number, number, number, number, boolean, boolean][] = [];
+  const updates: [number, number, number, number, boolean][] = [];
 
   foods.forEach(food => move(food, food.radius, 0.2));
 
@@ -186,24 +188,20 @@ const Update = () => {
       if (!near(ant, other, screamRadius)) return;
       const f = ant.food + screamRadius;
       const h = ant.home + screamRadius;
-      const closerFood = f < other.food;
-      const closerHome = h < other.home;
-      const goFood = !other.carrying && closerFood;
-      const goHome = other.carrying && closerHome;
+      const updateFood = !other.carrying && f < other.food;
+      const updateHome = other.carrying && h < other.home;
       const newDir =
         Math.atan2(ant.y - other.y, ant.x - other.x) +
         Math.random() * 0.5 -
         0.25;
-      if (closerFood) {
+      if (updateFood) {
         other.food = f;
-      } else if (closerHome) {
+      } else if (updateHome) {
         other.home = h;
       }
-      if (closerFood || closerHome) {
-        updates.push([ant.x, ant.y, other.x, other.y, closerFood, closerHome]);
-      }
-      if (goFood || goHome) {
+      if (updateFood || updateHome) {
         other.direction = newDir;
+        updates.push([ant.x, ant.y, other.x, other.y, updateFood]);
       }
     });
   });
