@@ -4,6 +4,10 @@ type Ant = Vec3 & { home: number; food: number; carrying: boolean };
 type Food = Vec3 & { radius: number };
 type Wall = { a: Vec; b: Vec };
 
+const help = [
+  'Click to toggle visible updates',
+  'spacebar to move home to cursor',
+];
 const scale = 6;
 const speed = 1;
 const screamRadius = 16;
@@ -12,6 +16,8 @@ const foods: Food[] = [];
 const newHome = { x: 0, y: 0 };
 const home = { x: 0, y: 0, radius: 4 };
 let collected = 0;
+let showUpdates = true;
+let helpOpacity = 1;
 const w = () => document.body.offsetWidth / scale;
 const h = () => document.body.offsetHeight / scale;
 
@@ -21,6 +27,9 @@ window.addEventListener('DOMContentLoaded', () => {
   ctx.canvas.addEventListener('mousemove', e => {
     newHome.x = e.offsetX / scale;
     newHome.y = e.offsetY / scale;
+  });
+  document.body.addEventListener('mousedown', e => {
+    showUpdates = !showUpdates;
   });
   document.body.addEventListener('keyup', e => {
     if (e.key === ' ') {
@@ -94,6 +103,9 @@ const Render = (ctx: CanvasRenderingContext2D) => {
   ctx.fillStyle = 'black';
   ctx.font = '6px monospace';
   ctx.fillText(`${collected}`, 2, 6);
+  ctx.fillStyle = `rgba(0, 0, 0, ${helpOpacity})`;
+  help.forEach((line, i) => ctx.fillText(line, 2, 12 + i * 6));
+  if (helpOpacity > 0) helpOpacity -= (1 - helpOpacity + 1) / 500;
 
   ctx.restore();
 
@@ -211,14 +223,18 @@ const Update = () => {
           Math.random() * 0.5 -
           0.25;
         other.direction = newDir;
-        updates.push([ant.x, ant.y, other.x, other.y, updateFood0]);
+        if (showUpdates) {
+          updates.push([ant.x, ant.y, other.x, other.y, updateFood0]);
+        }
       } else if (updateFood1 || updateHome1) {
         const newDir =
           Math.atan2(other.y - ant.y, other.x - ant.x) +
           Math.random() * 0.5 -
           0.25;
         ant.direction = newDir;
-        updates.push([ant.x, ant.y, other.x, other.y, updateFood1]);
+        if (showUpdates) {
+          updates.push([ant.x, ant.y, other.x, other.y, updateFood1]);
+        }
       }
     }
   }
