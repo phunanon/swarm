@@ -10,7 +10,7 @@ const help = [
 ];
 const scale = 6;
 const speed = 1;
-const screamRadius = 16;
+const screamRadius = 12;
 const ants: Ant[] = [];
 const foods: Food[] = [];
 const newHome = { x: 0, y: 0 };
@@ -39,14 +39,14 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   ants.push(
-    ...new Array(512).fill(0).map(() => ({
+    ...new Array(400).fill(0).map(() => ({
       ...{ x: Math.random() * w(), y: Math.random() * h() },
       ...{ home: 0, food: 0, carrying: false },
       direction: Math.random() * Math.PI * 2,
     }))
   );
   foods.push(
-    ...new Array(3).fill(0).map(() => ({
+    ...new Array(4).fill(0).map(() => ({
       x: Math.random() * w(),
       y: Math.random() * h(),
       radius: 4,
@@ -113,13 +113,10 @@ const Render = (ctx: CanvasRenderingContext2D) => {
 };
 
 const near = (a: Vec, b: Vec, radius: number) =>
-  a.x > b.x - radius &&
-  a.x < b.x + radius &&
-  a.y > b.y - radius &&
-  a.y < b.y + radius;
+  Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2) < radius;
 
 /** Moves an object and bounces it off the canvas bounds */
-const move = (vec: Vec3, radius = 0, pace = 1) => {
+const move = (vec: Vec3, radius: number, pace: number) => {
   vec.x += Math.cos(vec.direction) * speed * pace;
   vec.y += Math.sin(vec.direction) * speed * pace;
 
@@ -144,10 +141,10 @@ const move = (vec: Vec3, radius = 0, pace = 1) => {
 const Update = () => {
   const updates: [number, number, number, number, boolean][] = [];
 
-  foods.forEach(food => move(food, food.radius, 0.2));
+  foods.forEach(food => move(food, food.radius, 0.1));
 
   ants.forEach(ant => {
-    move(ant);
+    move(ant, 1, ant.carrying ? 0.75 : 1);
 
     if (ant.x < 0) {
       ant.direction = Math.PI - ant.direction;
