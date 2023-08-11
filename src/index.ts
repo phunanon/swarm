@@ -2,7 +2,6 @@ type Vec = { x: number; y: number };
 type Vec3 = Vec & { direction: number };
 type Ant = Vec3 & { home: number; food: number; carrying: boolean };
 type Food = Vec3 & { radius: number };
-type Wall = { a: Vec; b: Vec };
 
 const help = [
   'Click to toggle visible updates',
@@ -123,16 +122,13 @@ const move = (vec: Vec3, radius: number, pace: number) => {
   if (vec.x < radius) {
     vec.x = radius;
     vec.direction = Math.PI - vec.direction;
-  }
-  if (vec.x + radius > w()) {
+  } else if (vec.x + radius > w()) {
     vec.x = w() - radius;
     vec.direction = Math.PI - vec.direction;
-  }
-  if (vec.y < radius) {
+  } else if (vec.y < radius) {
     vec.y = radius;
     vec.direction = -vec.direction;
-  }
-  if (vec.y + radius > h()) {
+  } else if (vec.y + radius > h()) {
     vec.y = h() - radius;
     vec.direction = -vec.direction;
   }
@@ -146,23 +142,6 @@ const Update = () => {
   ants.forEach(ant => {
     move(ant, 1, ant.carrying ? 0.75 : 1);
 
-    if (ant.x < 0) {
-      ant.direction = Math.PI - ant.direction;
-      ant.x = 0;
-    }
-    if (ant.x > w()) {
-      ant.direction = Math.PI - ant.direction;
-      ant.x = w();
-    }
-    if (ant.y < 0) {
-      ant.direction = -ant.direction;
-      ant.y = 0;
-    }
-    if (ant.y > h()) {
-      ant.direction = -ant.direction;
-      ant.y = h();
-    }
-
     if (near(ant, home, home.radius) && ant.carrying) {
       ant.carrying = false;
       ant.home = 0;
@@ -172,17 +151,16 @@ const Update = () => {
 
     if (!ant.carrying) {
       foods.forEach(food => {
-        if (near(ant, food, food.radius)) {
-          ant.carrying = true;
-          ant.food = 0;
-          ant.direction += Math.PI;
-          food.radius -= 0.001;
-          if (food.radius < 1) {
-            food.x = Math.random() * w();
-            food.y = Math.random() * h();
-            food.radius = 4;
-            food.direction = Math.random() * Math.PI * 2;
-          }
+        if (!near(ant, food, food.radius)) return;
+        ant.carrying = true;
+        ant.food = 0;
+        ant.direction += Math.PI;
+        food.radius -= 0.001;
+        if (food.radius < 1) {
+          food.x = Math.random() * w();
+          food.y = Math.random() * h();
+          food.radius = 4;
+          food.direction = Math.random() * Math.PI * 2;
         }
       });
     }
@@ -192,45 +170,41 @@ const Update = () => {
   });
 
   for (let i = 0; i < ants.length; ++i) {
-    const ant = ants[i]!;
+    const a = ants[i]!;
     for (let j = i + 1; j < ants.length; ++j) {
-      const other = ants[j]!;
-      if (!near(ant, other, screamRadius)) continue;
-      const f0 = ant.food + screamRadius;
-      const h0 = ant.home + screamRadius;
-      const f1 = other.food + screamRadius;
-      const h1 = other.home + screamRadius;
-      const updateFood0 = !other.carrying && f0 < other.food;
-      const updateHome0 = other.carrying && h0 < other.home;
-      const updateFood1 = !ant.carrying && f1 < ant.food;
-      const updateHome1 = ant.carrying && h1 < ant.home;
-      if (updateFood0) {
-        other.food = f0;
-      } else if (updateHome0) {
-        other.home = h0;
+      const b = ants[j]!;
+      if (!near(a, b, screamRadius)) continue;
+      const fa = a.food + screamRadius;
+      const ha = a.home + screamRadius;
+      const fb = b.food + screamRadius;
+      const hb = b.home + screamRadius;
+      const updateFoodB = !b.carrying && fa < b.food;
+      const updateHomeB = b.carrying && ha < b.home;
+      const updateFoodA = !a.carrying && fb < a.food;
+      const updateHomeA = a.carrying && hb < a.home;
+      if (updateFoodB) {
+        b.food = fa;
+      } else if (updateHomeB) {
+        b.home = ha;
       }
-      if (updateFood1) {
-        ant.food = f1;
-      } else if (updateHome1) {
-        ant.home = h1;
+      if (updateFoodA) {
+        a.food = fb;
+      } else if (updateHomeA) {
+        a.home = hb;
       }
-      if (updateFood0 || updateHome0) {
+      if (updateFoodB || updateHomeB) {
         const newDir =
-          Math.atan2(ant.y - other.y, ant.x - other.x) +
-          Math.random() * 0.5 -
-          0.25;
-        other.direction = newDir;
+          Math.atan2(a.y - b.y, a.x - b.x) + Math.random() * 0.5 - 0.25;
+        b.direction = newDir;
         if (showUpdates) {
-          updates.push([ant.x, ant.y, other.x, other.y, updateFood0]);
+          updates.push([a.x, a.y, b.x, b.y, updateFoodB]);
         }
-      } else if (updateFood1 || updateHome1) {
+      } else if (updateFoodA || updateHomeA) {
         const newDir =
-          Math.atan2(other.y - ant.y, other.x - ant.x) +
-          Math.random() * 0.5 -
-          0.25;
-        ant.direction = newDir;
+          Math.atan2(b.y - a.y, b.x - a.x) + Math.random() * 0.5 - 0.25;
+        a.direction = newDir;
         if (showUpdates) {
-          updates.push([ant.x, ant.y, other.x, other.y, updateFood1]);
+          updates.push([a.x, a.y, b.x, b.y, updateFoodA]);
         }
       }
     }
