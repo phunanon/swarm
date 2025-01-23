@@ -33,7 +33,7 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 
   ants.push(
-    ...new Array(400).fill(0).map(() => ({
+    ...new Array(256).fill(0).map(() => ({
       ...{ x: Math.random() * w(), y: Math.random() * h() },
       ...{ home: 0, food: 0, carrying: false },
       direction: Math.random() * Math.PI * 2,
@@ -97,9 +97,12 @@ const Render = (ctx: CanvasRenderingContext2D) => {
   ctx.fillStyle = 'black';
   ctx.font = '6px monospace';
   ctx.fillText(`${collected}`, 2, 6);
-  ctx.fillStyle = `rgba(0, 0, 0, ${helpOpacity})`;
-  help.forEach((line, i) => ctx.fillText(line, 2, 12 + i * 6));
-  if (helpOpacity > 0) helpOpacity -= (1 - helpOpacity + 1) / 500;
+
+  if (helpOpacity > 0) {
+    ctx.fillStyle = `rgba(0, 0, 0, ${helpOpacity})`;
+    help.forEach((line, i) => ctx.fillText(line, 2, 12 + i * 6));
+    if (helpOpacity > 0) helpOpacity -= (1 - helpOpacity + 1) / 500;
+  }
 
   ctx.restore();
 
