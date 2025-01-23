@@ -98,7 +98,7 @@ var Render = function (ctx) {
             helpOpacity -= (1 - helpOpacity + 1) / 500;
     }
     ctx.restore();
-    setTimeout(function () { return Render(ctx); }, 10);
+    requestAnimationFrame(function () { return Render(ctx); });
 };
 var near = function (a, b, radius) {
     return Math.sqrt(Math.pow((a.x - b.x), 2) + Math.pow((a.y - b.y), 2)) < radius;

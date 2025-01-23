@@ -106,7 +106,7 @@ const Render = (ctx: CanvasRenderingContext2D) => {
 
   ctx.restore();
 
-  setTimeout(() => Render(ctx), 10);
+  requestAnimationFrame(() => Render(ctx));
 };
 
 const near = (a: Vec, b: Vec, radius: number) =>
