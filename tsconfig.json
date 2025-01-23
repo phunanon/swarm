@@ -6,7 +6,7 @@
     "module": "ES2015",
     "allowJs": true,
     "lib": ["ESNext", "DOM"],
-    "outDir": "dist",
+    "outDir": "docs",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "allowSyntheticDefaultImports": true,

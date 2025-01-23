@@ -3,38 +3,33 @@ type Vec3 = Vec & { direction: number };
 type Ant = Vec3 & { home: number; food: number; carrying: boolean };
 type Food = Vec3 & { radius: number };
 
-const help = [
-  'Click to toggle visible updates',
-  'spacebar to move home to cursor',
-];
-const scale = 6;
+const help = ['Click/tap to move home', 'Hold to toggle speech'];
 const speed = 1;
 const screamRadius = 12;
 const ants: Ant[] = [];
 const foods: Food[] = [];
-const newHome = { x: 0, y: 0 };
 const home = { x: 0, y: 0, radius: 4 };
 let collected = 0;
 let showUpdates = true;
 let helpOpacity = 1;
-const w = () => document.body.offsetWidth / scale;
-const h = () => document.body.offsetHeight / scale;
+let tapAt: Date | null = null;
+const scale = () =>
+  Math.min(document.body.offsetWidth, document.body.offsetHeight) / 100;
+const w = () => document.body.offsetWidth / scale();
+const h = () => document.body.offsetHeight / scale();
 
 window.addEventListener('DOMContentLoaded', () => {
   const ctx = document.querySelector('canvas')?.getContext('2d');
   if (!ctx) return;
-  ctx.canvas.addEventListener('mousemove', e => {
-    newHome.x = e.offsetX / scale;
-    newHome.y = e.offsetY / scale;
-  });
-  document.body.addEventListener('mousedown', e => {
-    showUpdates = !showUpdates;
-  });
-  document.body.addEventListener('keyup', e => {
-    if (e.key === ' ') {
-      home.x = newHome.x;
-      home.y = newHome.y;
+  document.body.addEventListener('pointerdown', e => (tapAt = new Date()));
+  document.body.addEventListener('pointerup', e => {
+    if (tapAt && new Date().getTime() - tapAt.getTime() < 500) {
+      home.x = e.offsetX / scale();
+      home.y = e.offsetY / scale();
+    } else {
+      showUpdates = !showUpdates;
     }
+    tapAt = null;
   });
 
   ants.push(
@@ -68,7 +63,7 @@ const Render = (ctx: CanvasRenderingContext2D) => {
   ctx.fillRect(0, 0, width, height);
 
   ctx.save();
-  ctx.scale(scale, scale);
+  ctx.scale(scale(), scale());
 
   const updates = Update();
   updates.forEach(([x1, y1, x2, y2, food]) => {
